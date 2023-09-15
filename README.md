@@ -1,1 +1,1 @@
-# MSP (MultiWii Werial Protocol) Connector for Python
+# MSP (MultiWii Serial Protocol) Connector for Python
