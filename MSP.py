@@ -75,6 +75,8 @@ class MSP:
         except Exception as e:
             print(str(e))
 
+        print(self.port.isOpen())
+
     def sendCMD(self, data_len, code, data, data_format):
         crc = 0
         total_data = ['$'.encode('utf-8'), 'M'.encode('utf-8'), '<'.encode('utf-8'), data_len, code] + data
@@ -103,41 +105,50 @@ class MSP:
             print("\n\nError sending command:")
             print("(" + str(error) + ")\n\n")
             pass
-
-    def receiveCMDMSP2(self):
-        while True:
-            byte = self.port.read()
-            if byte == b'$':
-                break
-        self.port.read(2)
-        flags = struct.unpack('<b', self.port.read())[0]
-        code = struct.unpack('<H', self.port.read(2))[0]
-        datalength = struct.unpack('<H', self.port.read(2))[0]
-        data = self.port.read(datalength)
         self.port.flushInput()
         self.port.flushOutput()
+
+    def receiveCMDMSP2(self):
+        try:
+            while True:
+                byte = self.port.read()
+                if byte == b'$':
+                    break
+            self.port.read(2)
+            flags = struct.unpack('<b', self.port.read())[0]
+            code = struct.unpack('<H', self.port.read(2))[0]
+            datalength = struct.unpack('<H', self.port.read(2))[0]
+            data = self.port.read(datalength)
+            self.port.flushInput()
+            self.port.flushOutput()
+        except Exception as e:
+            print(e)
         return code, datalength, data
 
     def sendRawRC(self, ch_data):
         self.sendCMDMSP2(len(ch_data) * 2, MSP.MessageIDs.get("MSP_SET_RAW_RC"), ch_data, str(len(ch_data))+'H')
         while True:
-            header = self.port.read().decode('utf-8')
-            if header == '$':
-                header = header + self.port.read(2).decode('utf-8')
+            byte = self.port.read()
+            if byte == b'$':
                 break
         self.port.flushInput()
         self.port.flushOutput()
 
     def readRawRC(self):
-        self.sendCMDMSP2(0, MSP.MessageIDs.get("MSP_RC"), [], '')
-        code, data_len, data = self.receiveCMDMSP2()
-        channels = struct.unpack('<' + 'H' * int(data_len/2), data)
+        channels = ()
+        try:
+            self.sendCMDMSP2(0, MSP.MessageIDs.get("MSP_RC"), [], '')
+            code, data_len, data = self.receiveCMDMSP2()
+            channels = struct.unpack('<' + 'H' * int(data_len/2), data)
+        except Exception as e:
+            print(e)
         return channels
 
     def readAttitude(self):
         self.sendCMDMSP2(0, MSP.MessageIDs.get("MSP_ATTITUDE"), [], '')
         code, data_len, data = self.receiveCMDMSP2()
         attitude = struct.unpack('<' + 'h' * int(data_len / 2), data)
+        attitude = (attitude[0] / 10, attitude[1] / 10, attitude[2])
         return attitude
 
     def readGPS(self):

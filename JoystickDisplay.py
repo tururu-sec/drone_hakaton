@@ -87,4 +87,4 @@ class JoystickDisplay(QGraphicsView):
         self.m_yaw = 0.0
         self.m_thr = 0.0
 
-    def updateView(self):
+    #def updateView(self):
