@@ -61,8 +61,6 @@ class App(ck.CTk):
         self.map_option_menu = ck.CTkOptionMenu(self.frame_right, values=["Default","OpenStreetMap", "Google normal", "Google satellite", "Wikimedia Cloud Services"],
                                                 font=("Monaco", 16), variable=title_map_optin_menu, command=self.change_map)
         self.map_option_menu.set("Default")
-
-
         self.map_option_menu.grid(row=0, column=0, pady=(0,2))
 
         # Info button
@@ -226,6 +224,8 @@ class App(ck.CTk):
         self.c1.coords(self.ball, sec_x(x),sec_y(y))
     
     def keyboad(self):
+        ''' Control drone from keyboard '''
+        '''
         speed = self.speed
         self.bind('<ButtonPress-w>', )
         self.bind('<ButtonPress-s>', )
@@ -236,6 +236,8 @@ class App(ck.CTk):
         self.bind('<ButtonRelease-s>', )
         self.bind('<ButtonRelease-a>', )
         self.bind('<ButtonRelease-d>', )
+        '''
+        pass
 
         
         
