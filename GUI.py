@@ -17,12 +17,12 @@ class App(ck.CTk):
         x_window = 1000
         y_window = 700
 
-        columns = 2
-        rows = 5
         pad = 15
 
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
+        self.x_position = 0
+        self.y_position = 0
+        
+        self.speed = 1
 
         self.geometry(f"{ x_window }x{ y_window }")
 
@@ -54,11 +54,15 @@ class App(ck.CTk):
         self.map_widget = tkintermapview.TkinterMapView(self.frame_right, corner_radius=10)
         self.map_widget.grid(row=2, rowspan=1, column=0, columnspan=4, sticky="nswe", padx=(0, 0), pady=(0, 0))
         self.map_widget.set_address("Тула")
-
+        if not(self.x_position==0) and not(self.y_position==0): 
+            self.map_widget.set_position(self.x_position, self.y_position)  
+        self.map_widget.set_zoom(15)
         title_map_optin_menu = ck.StringVar(value="Select map")
         self.map_option_menu = ck.CTkOptionMenu(self.frame_right, values=["Default","OpenStreetMap", "Google normal", "Google satellite", "Wikimedia Cloud Services"],
                                                 font=("Monaco", 16), variable=title_map_optin_menu, command=self.change_map)
         self.map_option_menu.set("Default")
+
+
         self.map_option_menu.grid(row=0, column=0, pady=(0,2))
 
         # Info button
@@ -107,16 +111,16 @@ class App(ck.CTk):
         ##скорость, высота, заряд батареи
         title1 = ['скорость', 'высота', 'батарея']
         values1 = self.get_stats()
-        self.titles = ck.CTkLabel(self.second_frame_scrollable, text=f'{title1[0]}    {title1[1]}    {title1[2]}', 
+        self.titles = ck.CTkLabel(self.second_frame_scrollable, text=f'{title1[0]}  {title1[1]}  {title1[2]}', 
                                              fg_color=None, font=("Monaco", 16))
         self.titles.grid(row=0, column=0, padx=(5,5), pady=(0,5),sticky="nsew" )
-        self.values1 = ck.CTkLabel(self.second_frame_scrollable, text='    '.join(values1), 
+        self.values1 = ck.CTkLabel(self.second_frame_scrollable, text='   '.join(values1), 
                                               fg_color=None, font=("Monaco", 28), text_color = 'red')
         self.values1.grid(row=1, column=0, padx=(5,5), pady=(0,5),sticky="nsew" )
 
         
         """
-        ## На будущее
+        ## На будущее доп ряд
         
         title2 = ['123', '456', '789']
         values2 = self.get_stats2()
@@ -130,9 +134,13 @@ class App(ck.CTk):
         # Contron Panel
         lower_slider_value = 0
         upper_slider_value = 100
+        
         self.slider_1 = ck.CTkSlider(self.frame_left, orientation="vertical", height=110, 
-                                                from_=lower_slider_value, to=upper_slider_value, number_of_steps=10, hover=True)
+                                                from_=lower_slider_value, to=upper_slider_value, number_of_steps=10, hover=True, command=lambda x: self.speed==x)
         self.slider_1.grid(row=2, column=0, padx=(pad, pad), pady=(pad, pad), sticky="w")
+    
+
+        self.draw_joystick1()
 
         # Downest button - Controling (ON/OFF)
         self.couter_btn_control = 1
@@ -191,7 +199,46 @@ class App(ck.CTk):
 
     def show_info(self):
         pass
+    
+    def draw_joystick1(self):
+        self.c1 = ck.CTkCanvas(self.frame_left, width=120, height=120)
+        self.c1.grid(row=2, column=0) #padx=(pad, pad), pady=(pad, pad)
 
+        norm_x = lambda x: x+60
+        norm_y = lambda y: y+60
+        
+        #c.create_line(10, 10, 190, 50)
+        self.c1.create_line(60, 0, 60, 120, fill='grey', width=2, arrow="first" )
+        self.c1.create_line(0, 60, 120, 60, fill='grey', width=2, arrow="last" )
+        
+        
+        self.ball = self.c1.create_oval(norm_x(5), norm_y(5), norm_x(-5), norm_y(-5), fill='#3b8ed0', outline=None )
+    
+    def set_marker(self, x:float,y:float):
+        self.x_position = x
+        self.y_position = y
+
+    def change_position_ball(self, x:int, y:int):
+
+        sec_x = lambda x: x+60
+        sec_y = lambda y: y+60
+
+        self.c1.coords(self.ball, sec_x(x),sec_y(y))
+    
+    def keyboad(self):
+        speed = self.speed
+        self.bind('<ButtonPress-w>', )
+        self.bind('<ButtonPress-s>', )
+        self.bind('<ButtonPress-a>', )
+        self.bind('<ButtonPress-d>', )
+
+        self.bind('<ButtonRelease-w>', )
+        self.bind('<ButtonRelease-s>', )
+        self.bind('<ButtonRelease-a>', )
+        self.bind('<ButtonRelease-d>', )
+
+        
+        
 if __name__ == "__main__":
     app = App()
     app.mainloop()
