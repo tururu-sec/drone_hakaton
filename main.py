@@ -2,10 +2,10 @@ import time
 
 from MSP import MSP
 
-msp = MSP("COM8")
+msp = MSP("COM4")
 
-msp.sendRawRC([1000, 1100, 1200, 1300, 1400])
+msp.sendRawRC([1000, 1500, 1000, 1000, 1000])
 
 while True:
-    msp.sendRawRC([1000, 1100, 1200, 1300, 1400])
-    time.sleep(0.05)
+    msp.readGPS()
+    time.sleep(1/50)

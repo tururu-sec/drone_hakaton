@@ -3,6 +3,16 @@ import time
 import serial, struct
 
 
+def crc8_dvb_s2(crc, byte):
+    crc = crc ^ byte
+    for i in range(8):
+        if (crc & 0x80):
+            crc = ((crc << 1) & 0xFF) ^ 0xD5
+        else:
+            crc = (crc << 1) & 0xFF
+    return crc
+
+
 class MSP:
     MessageIDs = {
         "MSP_IDENT": 100,
@@ -80,5 +90,58 @@ class MSP:
             print("(" + str(error) + ")\n\n")
             pass
 
+    def sendCMDMSP2(self, data_len, code, data, data_format):
+        crc = 0
+        total_data = ['$'.encode('utf-8'), 'X'.encode('utf-8'), '<'.encode('utf-8'), 0, code, data_len] + data
+        for i in struct.pack('<B2H' + data_format, *total_data[3:len(total_data)]):
+            crc = crc8_dvb_s2(crc, i)
+        total_data.append(crc)
+        try:
+            b = None
+            b = self.port.write(struct.pack('<3cB2H' + data_format + 'B', *total_data))
+        except Exception as error:
+            print("\n\nError sending command:")
+            print("(" + str(error) + ")\n\n")
+            pass
+
+    def receiveCMDMSP2(self):
+        while True:
+            byte = self.port.read()
+            if byte == b'$':
+                break
+        self.port.read(2)
+        flags = struct.unpack('<b', self.port.read())[0]
+        code = struct.unpack('<H', self.port.read(2))[0]
+        datalength = struct.unpack('<H', self.port.read(2))[0]
+        data = self.port.read(datalength)
+        self.port.flushInput()
+        self.port.flushOutput()
+        return code, datalength, data
+
     def sendRawRC(self, ch_data):
-        self.sendCMD(len(ch_data) * 2, MSP.MessageIDs.get("MSP_SET_RAW_RC"), ch_data, str(len(ch_data))+'H')
+        self.sendCMDMSP2(len(ch_data) * 2, MSP.MessageIDs.get("MSP_SET_RAW_RC"), ch_data, str(len(ch_data))+'H')
+        while True:
+            header = self.port.read().decode('utf-8')
+            if header == '$':
+                header = header + self.port.read(2).decode('utf-8')
+                break
+        self.port.flushInput()
+        self.port.flushOutput()
+
+    def readRawRC(self):
+        self.sendCMDMSP2(0, MSP.MessageIDs.get("MSP_RC"), [], '')
+        code, data_len, data = self.receiveCMDMSP2()
+        channels = struct.unpack('<' + 'H' * int(data_len/2), data)
+        return channels
+
+    def readAttitude(self):
+        self.sendCMDMSP2(0, MSP.MessageIDs.get("MSP_ATTITUDE"), [], '')
+        code, data_len, data = self.receiveCMDMSP2()
+        attitude = struct.unpack('<' + 'h' * int(data_len / 2), data)
+        return attitude
+
+    def readGPS(self):
+        self.sendCMDMSP2(0, MSP.MessageIDs.get("MSP_RAW_GPS"), [], '')
+        code, data_len, data = self.receiveCMDMSP2()
+        rawGPS = struct.unpack('<BBIIHHHH', data)
+        print(rawGPS)
